@@ -2,6 +2,23 @@
 
 Une application simple et efficace pour capturer des écrans multiples et des fenêtres d'applications sur Windows.
 
+## Téléchargement
+
+- Téléchargez la dernière version compilée: fichier `.zip` contenant l'exécutable.
+- Lien recommandé: section "Releases" du dépôt GitHub.
+- Si le navigateur bloque le téléchargement de `.exe`, utilisez l'archive `.zip` (puis extrayez-la et lancez l'exécutable).
+
+### Vérification d'intégrité (SHA256)
+
+```
+ABB543540C21247F9432A3DCB459654E4BFF70660821EB3DDD9040923DA32EDC
+```
+
+### Si Windows bloque l'exécution
+
+- Windows Defender SmartScreen: cliquez sur "Informations complémentaires" puis "Exécuter quand même".
+- Propriété du fichier: clic droit > Propriétés > cocher "Débloquer" puis OK (si présent).
+
 ## Fonctionnalités
 
 - **Détection automatique** : Détecte automatiquement tous les écrans connectés
