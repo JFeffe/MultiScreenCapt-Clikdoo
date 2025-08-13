@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MultiScreenCapt Web</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+            colors: {
+              brand: {
+                start: '#22d3ee', // cyan-400
+                mid: '#a78bfa',   // violet-400
+                end: '#f472b6',   // pink-400
+              }
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="min-h-screen font-sans text-slate-100 bg-slate-950 bg-[radial-gradient(1200px_800px_at_50%_-20%,#0f172a,transparent)]">
+    <div class="pointer-events-none fixed inset-0 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]">
+      <div class="absolute -top-40 -right-40 h-80 w-80 rounded-full blur-3xl opacity-30"
+           style="background-image: linear-gradient(135deg, #22d3ee, #a78bfa 60%, #f472b6);"></div>
+    </div>
+
+    <div class="relative max-w-6xl mx-auto p-6">
+      <header class="sticky top-4 z-40 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 rounded-2xl border border-slate-800/60 px-5 py-3 mb-6 flex items-center justify-between shadow-lg shadow-black/20">
+        <h1 class="text-2xl font-bold tracking-tight bg-clip-text text-transparent"
+            style="background-image: linear-gradient(135deg, #22d3ee, #a78bfa 60%, #f472b6);">MultiScreenCapt Web</h1>
+        <nav class="space-x-2">
+          <button id="tab-screens" class="px-3 py-1 rounded bg-slate-800 border border-slate-700">Screens</button>
+          <button id="tab-captures" class="px-3 py-1 rounded bg-slate-800 border border-slate-700 opacity-70">Captures</button>
+        </nav>
+      </header>
+
+      <section id="view-screens" class="space-y-4">
+        <div class="rounded-xl border border-slate-800/70 bg-slate-900/70 p-4 grid gap-2 shadow-lg">
+          <div>
+            <div class="text-sm text-slate-400">Saving to</div>
+            <div id="save-path-display" class="mt-1 text-slate-200 font-medium break-all"></div>
+          </div>
+        </div>
+        <div class="pt-2 pb-4 flex justify-center">
+          <button id="capture-all" class="btn-cta rounded-full h-14 px-10">
+            <span class="inline-flex items-center gap-3">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M3 9h4l2-3h6l2 3h4"/></svg>
+              <span>Capture all screens</span>
+            </span>
+          </button>
+        </div>
+        <div id="screens-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        <div class="rounded-xl border border-slate-800/70 bg-slate-900/70 p-4 shadow-lg">
+          <div class="text-sm text-slate-400 mb-2">Rename screens</div>
+          <div id="rename-list" class="space-y-2"></div>
+          <div class="mt-3 flex gap-2">
+            <button id="rename-apply" class="btn-secondary">Save names</button>
+            <button id="rename-reset" class="btn-secondary">Reset names</button>
+          </div>
+        </div>
+      </section>
+      <section id="view-captures" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 hidden"></section>
+      <div id="toasts" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+    </div>
+
+    <template id="card-template">
+      <div class="group relative rounded-2xl">
+        <div class="card-inner rounded-2xl border border-slate-800/60 bg-slate-900/70 p-5 shadow-lg backdrop-blur transition">
+          <div class="text-sm text-slate-400 mb-1 subtitle"></div>
+          <div class="text-lg font-semibold mb-3 title"></div>
+          <div class="text-xs text-slate-400 mb-4 meta"></div>
+          <div class="flex gap-2 items-center">
+            <button class="btn-primary hidden relative overflow-hidden select-none w-full justify-center">
+              <span class="btn-ripple pointer-events-none absolute inset-0"></span>
+              <span class="btn-label state inline-flex items-center gap-2">
+                <svg class="w-4 h-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                <span>Capture</span>
+              </span>
+              <span class="btn-spinner state items-center gap-2">
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                <span>Capturing…</span>
+              </span>
+              <span class="btn-check state items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                <span>Captured</span>
+              </span>
+            </button>
+            <a class="btn-secondary hidden" target="_blank">Open</a>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <script>
+      const screensView = document.getElementById('view-screens');
+      const capturesView = document.getElementById('view-captures');
+      const tpl = document.getElementById('card-template');
+      const screensGrid = document.getElementById('screens-grid');
+      const renameList = document.getElementById('rename-list');
+      const saveDisplay = document.getElementById('save-path-display');
+      const captureAll = document.getElementById('capture-all');
+
+      const tabs = {
+        screens: document.getElementById('tab-screens'),
+        captures: document.getElementById('tab-captures'),
+      };
+      const views = {
+        screens: screensView,
+        captures: capturesView,
+      };
+
+      function showTab(name){
+        for (const [k, v] of Object.entries(views)){
+          v.classList.toggle('hidden', k !== name);
+        }
+        for (const [k, btn] of Object.entries(tabs)){
+          const active = k === name;
+          btn.classList.toggle('opacity-70', !active);
+        }
+        if (name === 'screens') loadScreens(true);
+        if (name === 'captures') loadCaptures();
+      }
+
+      tabs.screens.addEventListener('click', () => showTab('screens'));
+      tabs.captures.addEventListener('click', () => showTab('captures'));
+
+      function toast(message, type = 'ok'){
+        const c = document.getElementById('toasts');
+        const d = document.createElement('div');
+        d.className = `rounded-lg px-3 py-2 text-sm shadow-lg border ${type==='ok' ? 'bg-emerald-500/15 text-emerald-200 border-emerald-500/30' : 'bg-rose-500/15 text-rose-200 border-rose-500/30'}`;
+        d.textContent = message;
+        c.appendChild(d);
+        setTimeout(()=>{ d.classList.add('opacity-0','translate-y-1','transition'); }, 1800);
+        setTimeout(()=>{ d.remove(); }, 2300);
+      }
+
+      function setButtonState(btn, state){
+        const label = btn.querySelector('.btn-label');
+        const spin = btn.querySelector('.btn-spinner');
+        const check = btn.querySelector('.btn-check');
+        // Avoid layout shift: overlay states with opacity
+        [label, spin, check].forEach(el => el && el.classList.remove('is-visible'));
+        if (state === 'idle') label.classList.add('is-visible');
+        if (state === 'loading') spin.classList.add('is-visible');
+        if (state === 'done') check.classList.add('is-visible');
+        btn.disabled = state === 'loading';
+        btn.classList.toggle('is-loading', state === 'loading');
+        btn.classList.toggle('is-done', state === 'done');
+      }
+
+      function ripple(btn, e){
+        const r = document.createElement('span');
+        const rect = btn.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        r.style.width = r.style.height = size + 'px';
+        r.style.left = (e.clientX - rect.left - size/2) + 'px';
+        r.style.top = (e.clientY - rect.top - size/2) + 'px';
+        r.className = 'pointer-events-none absolute rounded-full bg-white/20 animate-ping';
+        btn.appendChild(r);
+        setTimeout(()=>r.remove(), 500);
+      }
+
+      async function loadScreens(loadSettings=false){
+        screensGrid.innerHTML = '';
+        if (loadSettings){
+          const sres = await fetch('/api/settings');
+          const sdata = await sres.json();
+          saveDisplay.textContent = sdata.save_directory || '';
+          renameList.innerHTML = '';
+          sdata.screens.forEach(sc => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-3';
+            const label = document.createElement('div');
+            label.className = 'text-sm text-slate-400 w-44';
+            label.textContent = `${sc.width}×${sc.height} @ (${sc.left}, ${sc.top})`;
+            const input = document.createElement('input');
+            input.className = 'flex-1 px-3 py-2 rounded-lg bg-slate-950/40 border border-slate-800 outline-none focus:ring-2 ring-indigo-500/50';
+            input.value = sc.name || '';
+            input.dataset.index = sc.index;
+            row.appendChild(label); row.appendChild(input);
+            renameList.appendChild(row);
+          });
+        }
+        const res = await fetch('/api/screens');
+        const data = await res.json();
+        data.forEach(s => {
+          const node = tpl.content.cloneNode(true);
+          const card = node.querySelector('.card-inner');
+          node.querySelector('.subtitle').textContent = 'Screen';
+          node.querySelector('.title').textContent = s.name;
+          node.querySelector('.meta').textContent = `${s.width}×${s.height} @ (${s.left}, ${s.top})`;
+          const btn = node.querySelector('.btn-primary');
+          btn.classList.remove('hidden');
+          const clickCapture = async (e) => {
+            ripple(card, e);
+            setButtonState(btn, 'loading');
+            try {
+              const resp = await fetch(`/api/capture/screen?index=${encodeURIComponent(s.index)}`, { method: 'POST' });
+              const r = await resp.json();
+              if (r.ok){ setButtonState(btn, 'done'); toast('Capture enregistrée'); setTimeout(()=>{ setButtonState(btn, 'idle'); }, 1000); loadCaptures(); }
+              else { toast('Erreur de capture', 'err'); setButtonState(btn, 'idle'); }
+            } catch(err){ toast('Erreur de capture', 'err'); setButtonState(btn, 'idle'); }
+          };
+          btn.addEventListener('click', (e) => { e.stopPropagation(); clickCapture(e); });
+          card.style.cursor = 'pointer';
+          card.addEventListener('click', clickCapture);
+          screensGrid.appendChild(node);
+        });
+      }
+
+      // Windows tab removed for now
+
+      async function loadCaptures(){
+        capturesView.innerHTML = '';
+        const res = await fetch('/api/captures');
+        const data = await res.json();
+        data.forEach(c => {
+          const node = tpl.content.cloneNode(true);
+          node.querySelector('.subtitle').textContent = 'Capture';
+          node.querySelector('.title').textContent = c.filename;
+          node.querySelector('.meta').textContent = `${(c.size_bytes/1024/1024).toFixed(2)} MB · ${new Date(c.modified).toLocaleString()}`;
+          const a = node.querySelector('.btn-secondary');
+          a.classList.remove('hidden');
+          a.textContent = 'Open';
+          a.href = c.url;
+          // Add thumbnail into the card content (before subtitle)
+          const img = new Image();
+          img.src = c.url;
+          img.alt = c.filename;
+          img.className = 'mb-3 rounded-lg border border-slate-800/70';
+          const card = node.querySelector('.card-inner');
+          const ref = card.querySelector('.subtitle');
+          card.insertBefore(img, ref);
+          capturesView.appendChild(node);
+        });
+      }
+
+      showTab('screens');
+
+      // Save directory controls removed per request
+
+      // Rename screens actions
+      document.getElementById('rename-apply').addEventListener('click', async ()=>{
+        const inputs = renameList.querySelectorAll('input');
+        const payload = Array.from(inputs).map(i => ({ index: Number(i.dataset.index), name: i.value.trim() }));
+        const res = await fetch('/api/screen_names', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        if (res.ok){ toast('Names saved'); loadScreens(); }
+        else { const txt = await res.text(); toast(`Error: ${txt}`, 'err'); }
+      });
+      document.getElementById('rename-reset').addEventListener('click', async ()=>{
+        const res = await fetch('/api/screen_names/reset', { method:'POST' });
+        if (res.ok){ toast('Names reset'); loadScreens(true); }
+        else { const txt = await res.text(); toast(`Error: ${txt}`, 'err'); }
+      });
+
+      // Capture all screens CTA
+      captureAll.addEventListener('click', async (e)=>{
+        const cards = screensGrid.querySelectorAll('.btn-primary');
+        for (const btn of cards){
+          btn.click();
+          await new Promise(r=>setTimeout(r, 250));
+        }
+      });
+    </script>
+
+    <style>
+      .btn-primary { @apply px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-600 via-indigo-500 to-fuchsia-600 text-white shadow-lg shadow-indigo-900/20 hover:brightness-110 active:scale-95 transition disabled:opacity-60 border border-indigo-400/20; }
+      .btn-primary.is-loading { @apply opacity-90 cursor-wait; }
+      .btn-primary.is-done { @apply ring-2 ring-emerald-400/50; }
+      .btn-primary > span { @apply flex items-center; }
+      .btn-primary .state { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+      .btn-primary .state.is-visible { opacity: 1; }
+      .btn-secondary { @apply px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition; }
+      .btn-cta { @apply h-14 px-6 rounded-2xl text-lg font-semibold text-white shadow-xl border transition active:scale-95; background-image: linear-gradient(135deg, #22d3ee, #a78bfa 60%, #f472b6); border-color: rgba(255,255,255,0.15); }
+      /* Subtle glossy hover using gradient overlay on the inner card */
+      .group:hover .card-inner {
+        position: relative;
+        box-shadow: 0 10px 30px rgba(23,23,23,0.5);
+      }
+      .group:hover .card-inner::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: 1rem;
+        background: radial-gradient(120% 60% at 50% -20%, rgba(255,255,255,0.06), transparent 60%),
+                    linear-gradient(180deg, rgba(255,255,255,0.03), transparent 30%);
+      }
+      /* Gradient border on hover without layout shifts (mask trick) */
+      .card-inner { position: relative; border-radius: 1rem; }
+      .card-inner::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        padding: 1px; /* border thickness */
+        border-radius: inherit;
+        background: linear-gradient(135deg, #22d3ee, #a78bfa 60%, #f472b6);
+        background-size: 200% 200%;
+        opacity: 0;
+        transition: opacity .25s ease, background-position .6s ease;
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+                mask-composite: exclude; /* keep only the border */
+        pointer-events: none;
+      }
+      .group:hover .card-inner::before { opacity: 1; background-position: 100% 0; }
+    </style>
+  </body>
+  </html>
+
+
